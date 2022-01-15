@@ -42,6 +42,11 @@ for index, site in enumerate(ffc_obs):
         observed_avg.append(metric_obs)
     output = pd.DataFrame(zip(exceedance_freq, percent_change, naturalized_avg, observed_avg), 
     columns = ['exceedance_freq', 'percent_change', 'naturalized_avg', 'observed_avg'])
+    # to print outputs individually for each site
+    output['metrics'] = metrics
+    output = output.set_index(['metrics'])
+    output.to_csv('data_outputs/Eco_exceedance_by_site/{}.csv'.format(site['gage_id']))
+
     site_dfs.append(output)
 df_output = pd.concat(site_dfs).groupby(level=0).mean()
 df_output['metrics'] = metrics
