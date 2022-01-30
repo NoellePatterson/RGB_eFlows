@@ -48,8 +48,23 @@ for index, site in enumerate(ffc_obs):
     output.to_csv('data_outputs/Eco_exceedance_by_site/{}.csv'.format(site['gage_id']))
 
     site_dfs.append(output)
-df_output = pd.concat(site_dfs).groupby(level=0).mean()
+df_output = pd.concat(site_dfs).groupby(level=0, sort=False).mean()
 df_output['metrics'] = metrics
 df_output = df_output.set_index(['metrics'])
 df_output.to_csv('data_outputs/Eco-exceedance_indicators.csv')
+
+# Create outputs by component
+df_output = df_output.drop(['naturalized_avg', 'observed_avg'], axis=1)
+fall = df_output.iloc[0:3,:].mean()
+wet = df_output.iloc[3:7,:].mean()
+peak = df_output.iloc[7:16,:].mean()
+spring = df_output.iloc[16:20,:].mean()
+dry = df_output.iloc[20:24,:].mean()
+annual = df_output.iloc[[24, 26, 27],:].mean()
+
+
+components = pd.concat([fall, wet, peak, spring, dry, annual], axis=1)
+components.columns = ['Fall pulse', 'Wet season', 'Peak flows', 'Spring recession', 'Dry season', 'Annual']
+components = components.transpose()
+components.to_csv('data_outputs/Eco_exceedance_components.csv')
 # import pdb; pdb.set_trace()
