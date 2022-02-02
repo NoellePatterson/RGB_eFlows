@@ -55,8 +55,8 @@ for index, site in enumerate(ffc_obs):
         # Assign letter grade and exceedance level based on 50th/80th scores
         # Scores: Excellent: 80th 0.8-0.55 and 50th 0.5-0.4: 
         # Good: 80th 0.4-0.8 and 50th 0.25-0.5
-        # In danger: 80th 0.15-0.4 and 50th 0.15-0.25
-        # Extremely altered: 80th 0-0.15 and 50th 0-0.15
+        # Extremely altered: 80th 0.15-0.4 and 50th 0.15-0.25
+        # Severe danger: 80th 0-0.15 and 50th 0-0.15
         # Special concern - if none of other conditions have been met (should be 80th 0.4-0.8 OR 50th 0.25-0.5)
         score = None
         if range_80_perc >= 0.55 and range_50_perc >= 0.4:
@@ -64,9 +64,9 @@ for index, site in enumerate(ffc_obs):
         elif range_80_perc >= 0.4 and range_50_perc >= 0.25:
             score = 'Good'
         elif range_80_perc <= 0.15 and range_50_perc <= 0.15:
-            score = 'Extremely altered'
+            score = 'Severe danger'
         elif range_80_perc <= 0.4 and range_50_perc <= 0.25:
-            score = 'In danger'
+            score = 'Extremely altered'
         else:
             score = 'Special concern'
         score_ls.append(score)
