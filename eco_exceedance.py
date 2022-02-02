@@ -48,6 +48,7 @@ for index, site in enumerate(ffc_obs):
     output.to_csv('data_outputs/Eco_exceedance_by_site/{}.csv'.format(site['gage_id']))
 
     site_dfs.append(output)
+import pdb; pdb.set_trace()
 df_output = pd.concat(site_dfs).groupby(level=0, sort=False).mean()
 df_output['metrics'] = metrics
 df_output = df_output.set_index(['metrics'])
