@@ -43,12 +43,12 @@ def import_ffc_data(data_folder):
         ffc_dicts.append(main_dict)
     return ffc_dicts
 
-def summarize_ffc_metrics(data_folder):
-    ffc_dicts = import_ffc_data(data_folder)
-       
+def summarize_ffc_metrics(data_folder, flow_condition):
+    ffc_dicts = import_ffc_data(data_folder)  
     # Summarize metrics across years in [median and percentiles]
     for ffc_dict in ffc_dicts:
         ffc_dict['ffc_metrics'] = ffc_dict['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
+        ffc_dict['ffc_metrics'] = ffc_dict['ffc_metrics'].drop(['Std', 'DS_No_Flow'])
         sum_med = ffc_dict['ffc_metrics'].quantile(.5, axis=1)
         sum_10 = ffc_dict['ffc_metrics'].quantile(.10, axis=1)
         sum_25 = ffc_dict['ffc_metrics'].quantile(.25, axis=1)
@@ -59,11 +59,10 @@ def summarize_ffc_metrics(data_folder):
         names_dict = {'RG6_':'RG6_NR_LOBATOS', 'RG7_':'RG7_NR_CERRO', 'RG8_':'RG8_NR_TAOS_BRIDGE', 'RG9_':'RG9_EMBUDO', 'RG10':'RG10_OTOWI_BRIDGE',
         'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
         'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
-        # import pdb; pdb.set_trace()
         for site_name in names_dict.keys():
             if site_name == ffc_dict['gage_id']:
                 print_name = names_dict[site_name]
-        summary_output.to_csv('data_outputs/Metric_summaries_naturalized/' + print_name + '.csv')
+        summary_output.to_csv('data_outputs/Metric_summaries_{}/{}.csv'.format(flow_condition, print_name))
 
 def compile_data():
     data_cols = pd.read_csv('data_inputs/RGB_observed_daily_discharge.csv')
