@@ -48,32 +48,27 @@ def plot_rh(rgb_rh, flow_condition):
 def overlap_plots(rh_nat, rh_obs):
     percentiles = [25, 50, 75]
     percentile_keys = ['twenty_five', 'fifty', 'seventy_five']
-
     plotlines_nat = {}
     plotlines_obs = {}
     for index, site in enumerate(rh_nat):
         plotlines_nat = create_plotlines(rh_nat[index], plotlines_nat, percentiles, percentile_keys)
         plotlines_obs = create_plotlines(rh_obs[index], plotlines_obs, percentiles, percentile_keys)
-        plt.rc('ytick', labelsize=16) 
+        plt.rc('ytick', labelsize=10) 
         plt.subplot(1,1,1)
-        name = site['name']
-        plt.xticks([])
-        plt.tick_params(axis='y', which='major', pad=1)
-        plt.ylabel('Flow (cfs)', fontsize=10)
-
-        month_ticks = [0,32,60,91,121,152,182,213,244,274,305,335]
-        month_labels = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
-        plt.xticks(month_ticks, month_labels, fontsize=16)
-        plt.ylabel('Flow (cfs)', fontsize=10)
-        ax = plt.gca()
-        ax.set_ylim(0,12000)
 
         plot = plot_stuff(plotlines_nat, '#3d49f5', 'Naturalized')
         plot = plot_stuff(plotlines_obs, '#D70040', 'Observed')
+        plt.xticks([])
+        plt.tick_params(axis='y', which='major', pad=1)
+        plt.ylabel('Flow (cfs)', fontsize=10)
+        month_ticks = [0,32,60,91,121,152,182,213,244,274,305,335]
+        month_labels = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+        plt.xticks(month_ticks, month_labels, fontsize=10)
+        ax = plt.gca()
+        # ax.set_ylim(0,12000) # optionally set consistent y axis range for all plots
+        # optional legend
         # plt.legend(loc='upper right', bbox_to_anchor=(0.5, -0.05), fancybox=True, ncol=7, borderaxespad = .9, fontsize='small', labelspacing=.2, columnspacing=1, markerscale=.5)
         plt.title(site['name'])  
-        plt.savefig('data_outputs/RGB_overlaid_rh/'+site['name']+'.png', dpi=600)  
+        plt.savefig('data_outputs/RGB_overlaid_rh/'+site['name']+'.png', dpi=800)  
         plt.clf()
-        # import pdb; pdb.set_trace()
-
     return
