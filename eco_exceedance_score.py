@@ -28,6 +28,7 @@ for index, site in enumerate(ffc_obs):
     naturalized_avg = []
     observed_avg = []
     score_ls = []
+    grade_ls = []
     for metric in metrics:
         # determine bounds of 50th and 80th percentile
         lower_50 = np.nanquantile(ffc_nat[index]['ffc_metrics'].loc[metric], 0.25)
@@ -59,25 +60,32 @@ for index, site in enumerate(ffc_obs):
         # Severe danger: 80th 0-0.15 and 50th 0-0.15
         # Special concern - if none of other conditions have been met (should be 80th 0.4-0.8 OR 50th 0.25-0.5)
         score = None
+        grade = None
         if range_80_perc >= 0.55 and range_50_perc >= 0.4:
             score = 'Excellent'
+            grade = 'A'
         elif range_80_perc >= 0.4 and range_50_perc >= 0.25:
             score = 'Good'
+            grade = 'B'
         elif range_80_perc <= 0.15 and range_50_perc <= 0.15:
             score = 'Severe danger'
+            grade = 'F'
         elif range_80_perc <= 0.4 and range_50_perc <= 0.25:
             score = 'Extremely altered'
+            grade = 'D'
         else:
             score = 'Special concern'
+            grade = 'C'
         score_ls.append(score)
+        grade_ls.append(grade)
 
-    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, score_ls), 
-    columns = ['range_50_freq', 'range_80_freq', 'score'])
+    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, score_ls, grade_ls), 
+    columns = ['range_50_freq', 'range_80_freq', 'score', 'grade'])
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
     output.to_csv('data_outputs/Eco_exceedance_by_site_Sam/{}.csv'.format(site['gage_id']))
-    output = output.drop('score', axis=1)
+    output = output.drop(['score', 'grade'], axis=1)
     site_dfs.append(output)
 # Aggregation: geom average of all metrics per component. Arithmetic avg across all sites' components. 
 # And finally: arithmetic mean of regionalized components for one final number. 
