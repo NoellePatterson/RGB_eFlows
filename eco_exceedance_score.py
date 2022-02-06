@@ -12,7 +12,7 @@ sns.set()
 data_folder = 'RGB_observed_ffc_outputs'
 ffc_obs = import_ffc_data(data_folder)
 
-data_folder = 'RGB_unimp_ffc_outputs_jan'
+data_folder = 'RGB_unimp_ffc_outputs'
 ffc_nat = import_ffc_data(data_folder)
 
 site_dfs = [] # append each final df for a site to this list, take average over sites later
@@ -106,11 +106,14 @@ for site in site_dfs:
 df_output = pd.concat(site_component_dfs).groupby(level=0, sort=False).mean()
 
 df_output.to_csv('data_outputs/Eco-exceedance_regionalized_score_Sam.csv')
-import pdb; pdb.set_trace()
 
 # outputs: 1. Scores sorted by each ff component (and metric), qualitative score and letter grade, overall score
-# 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one    
+# 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one  
+# 
+# Put site name in plot tile. Increase size to fit y axis label (or remove second instance.)
+# Put full site name in filename
 for index, site in enumerate(ffc_obs):
+    # import pdb; pdb.set_trace()
     nat_data = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     obs_data = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
 
@@ -122,9 +125,16 @@ for index, site in enumerate(ffc_obs):
     component_dicts = [fall_metrics, wet_metrics, spring_metrics, dry_metrics, annual_metrics]
     # group each component's data into long format, w col for obs/nat condition 
     # plot magnitude separately bc values are so different
-    
+
+    names_dict = {'RG6_':'RG6_NR_LOBATOS', 'RG7_':'RG7_NR_CERRO', 'RG8_':'RG8_NR_TAOS_BRIDGE', 'RG9_':'RG9_EMBUDO', 'RG10':'RG10_OTOWI_BRIDGE',
+    'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
+    'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
+    for site_name in names_dict.keys():
+            if site_name == site['gage_id']:
+                print_name = names_dict[site_name]
+
     for component in component_dicts:
-        fig, axes = plt.subplots(1, 2, figsize=(8,6))
+        fig, axes = plt.subplots(1, 2, figsize=(10,6))
         fall_metrics_nat = nat_data.loc[component['all_metrics'], :]
         fall_metrics_nat = fall_metrics_nat.transpose()
         fall_metrics_nat['condition'] = ['naturalized']*len(fall_metrics_nat.index)
@@ -140,6 +150,7 @@ for index, site in enumerate(ffc_obs):
         sns.boxplot(ax=axes[0], data = boxplot_df1, x = 'metric', y='value', hue = 'condition')
         sns.boxplot(ax=axes[1], data = boxplot_df2, x = 'metric', y='value', hue = 'condition')
         plt.legend([],[], frameon=False) # remove second instance of legend
-        plt.suptitle('{} Metrics'.format(component['name']))
-        plt.savefig('data_outputs/Eco_exceedance_boxplots/{}/boxplot_{}.jpeg'.format(site['gage_id'], component['name']), dpi=600)
-    # import pdb; pdb.set_trace()
+        plt.suptitle('{} {} Metrics'.format(print_name, component['name']))
+        plt.savefig('data_outputs/Eco_exceedance_boxplots/{}/boxplot_{}.jpeg'.format(print_name, component['name']), dpi=600, bbox_inches='tight')
+        # import pdb; pdb.set_trace()
+
