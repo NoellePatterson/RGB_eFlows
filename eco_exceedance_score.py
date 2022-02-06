@@ -109,9 +109,7 @@ df_output.to_csv('data_outputs/Eco-exceedance_regionalized_score_Sam.csv')
 
 # outputs: 1. Scores sorted by each ff component (and metric), qualitative score and letter grade, overall score
 # 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one  
-# 
-# Put site name in plot tile. Increase size to fit y axis label (or remove second instance.)
-# Put full site name in filename
+
 for index, site in enumerate(ffc_obs):
     # import pdb; pdb.set_trace()
     nat_data = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
