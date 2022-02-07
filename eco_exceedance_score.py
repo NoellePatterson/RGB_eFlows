@@ -18,6 +18,13 @@ ffc_nat = import_ffc_data(data_folder)
 site_dfs = [] # append each final df for a site to this list, take average over sites later
 # for each site:
 for index, site in enumerate(ffc_obs):
+    names_dict = {'RG6_':'RG6_NR_LOBATOS', 'RG7_':'RG7_NR_CERRO', 'RG8_':'RG8_NR_TAOS_BRIDGE', 'RG9_':'RG9_EMBUDO', 'RG10':'RG10_OTOWI_BRIDGE',
+    'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
+    'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
+    for site_name in names_dict.keys():
+            if site_name == site['gage_id']:
+                print_name = names_dict[site_name]
+
     ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     ffc_obs[index]['ffc_metrics'] = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     site_id = site['gage_id']
@@ -80,13 +87,16 @@ for index, site in enumerate(ffc_obs):
         grade_ls.append(grade)
 
     output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, score_ls, grade_ls), 
-    columns = ['range_50_freq', 'range_80_freq', 'score', 'grade'])
+    columns = ['Interquartile', 'Interdecile', 'score', 'grade'])
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
-    output.to_csv('data_outputs/Eco_exceedance_by_site_Sam/{}.csv'.format(site['gage_id']))
+    output = output.drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2','Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5',
+    'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
+    output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
     output = output.drop(['score', 'grade'], axis=1)
     site_dfs.append(output)
+
 # Aggregation: geom average of all metrics per component. Arithmetic avg across all sites' components. 
 # And finally: arithmetic mean of regionalized components for one final number. 
 site_component_dfs = []
