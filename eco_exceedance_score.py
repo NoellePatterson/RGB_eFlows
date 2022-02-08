@@ -1,3 +1,4 @@
+from os import rename
 import numpy as np
 import pandas as pd
 from utils import import_ffc_data
@@ -95,28 +96,60 @@ for index, site in enumerate(ffc_obs):
     'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
     output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
     output = output.drop(['score', 'grade'], axis=1)
+    site['alt_scores'] = output
     site_dfs.append(output)
 
 # Aggregation: geom average of all metrics per component. Arithmetic avg across all sites' components. 
 # And finally: arithmetic mean of regionalized components for one final number. 
 site_component_dfs = []
-for site in site_dfs:
+# average components by basin reaches, too
+upper_co = []
+upper_nm = []
+middle = []
+lower = []
+for site in ffc_obs:
     # Create outputs by component
-    fall = pd.Series(stats.gmean(site.iloc[0:3,:]))
-    wet = pd.Series(stats.gmean(site.iloc[3:7,:]))
-    peak = pd.Series(stats.gmean(site.iloc[7:16,:]))
-    spring = pd.Series(stats.gmean(site.iloc[16:20,:]))
-    dry = pd.Series(stats.gmean(site.iloc[20:24,:]))
-    annual = pd.Series(stats.gmean(site.iloc[[24, 26, 27],:]))
-    components = pd.concat([fall, wet, peak, spring, dry, annual], axis=1)
-    components.columns = ['Fall pulse', 'Wet season', 'Peak flows', 'Spring recession', 'Dry season', 'Annual']
+    fall = pd.Series(stats.gmean(site['alt_scores'].iloc[0:3,:]))
+    wet = pd.Series(stats.gmean(site['alt_scores'].iloc[3:7,:]))
+    spring = pd.Series(stats.gmean(site['alt_scores'].iloc[7:11,:]))
+    dry = pd.Series(stats.gmean(site['alt_scores'].iloc[11:15,:]))
+    annual = pd.Series(stats.gmean(site['alt_scores'].iloc[15:17,:]))
+    components = pd.concat([fall, wet, spring, dry, annual], axis=1)
+    components.columns = ['Fall pulse', 'Wet season', 'Spring recession', 'Dry season', 'Annual']
     components = components.transpose()
     site_component_dfs.append(components)
+    if site['gage_id'] == 'RG6_':
+        upper_co.append(components)
+    elif site['gage_id'] == 'RG7_' or site['gage_id'] == 'RG8_' or site['gage_id'] == 'RG9_' or site['gage_id'] == 'RG10':
+        upper_nm.append(components)
+    elif site['gage_id'] == 'RG11' or site['gage_id'] == 'RG12' or site['gage_id'] == 'RG14' or site['gage_id'] == 'RG15' or \
+    site['gage_id'] == 'RG16' or site['gage_id'] == 'RG18':
+        middle.append(components)
+    elif site['gage_id'] == 'RG19' or site['gage_id'] == 'RG20' or site['gage_id'] == 'RG21':
+        lower.append(components)
+# Take regional arithmetic averages of site totals
+upper_co = pd.concat(upper_co).groupby(level=0, sort=False).mean()
+upper_nm = pd.concat(upper_nm).groupby(level=0, sort=False).mean()
+middle = pd.concat(middle).groupby(level=0, sort=False).mean()
+lower = pd.concat(lower).groupby(level=0, sort=False).mean()
 
-df_output = pd.concat(site_component_dfs).groupby(level=0, sort=False).mean()
+def rename_cols(df):
+    df = df.rename(columns={0: 'Interquartile', 1: 'Interdecile'})
+    return df
+upper_co = rename_cols(upper_co)
+upper_nm = rename_cols(upper_nm)
+middle = rename_cols(middle)
+lower = rename_cols(lower)
 
-df_output.to_csv('data_outputs/Eco-exceedance_regionalized_score_Sam.csv')
+all_sites = pd.concat(site_component_dfs).groupby(level=0, sort=False).mean() # arithmetic average all sites
+all_sites = rename_cols(all_sites)
 
+all_sites.to_csv('data_outputs/Eco-exceedance_regionalized_score_Sam.csv')
+upper_co.to_csv('data_outputs/Eco-exceedance_upper_co.csv')
+upper_nm.to_csv('data_outputs/Eco-exceedance_upper_nm.csv')
+middle.to_csv('data_outputs/Eco-exceedance_middle.csv')
+lower.to_csv('data_outputs/Eco-exceedance_lower.csv')
+import pdb; pdb.set_trace()
 # outputs: 1. Scores sorted by each ff component (and metric), qualitative score and letter grade, overall score
 # 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one  
 
