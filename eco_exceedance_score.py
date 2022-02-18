@@ -27,7 +27,13 @@ for index, site in enumerate(ffc_obs):
                 print_name = names_dict[site_name]
 
     ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
+    ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2',
+    'Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5', 'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
+
     ffc_obs[index]['ffc_metrics'] = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
+    ffc_obs[index]['ffc_metrics'] = ffc_obs[index]['ffc_metrics'].drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2',
+    'Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5', 'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
+
     site_id = site['gage_id']
     metrics = site['ffc_metrics'].index
     range_50_perc_ls = []
@@ -47,6 +53,9 @@ for index, site in enumerate(ffc_obs):
         range_50 = 0
         range_80 = 0
         obs_metrics = ffc_obs[index]['ffc_metrics'].loc[metric]
+        obs_len = len(obs_metrics.dropna())
+        if obs_len == 0: # some peak metrics are all NA, easiest fix is to pass over them
+            continue
         # determine % values within range in each category
         # Double-check with Sam: are observed values to test agains naturalized supposed to be All the values (like I've done)?
         # Or should I be testing observed interquartile with the naturzlied interquartile?
@@ -56,11 +65,11 @@ for index, site in enumerate(ffc_obs):
         for obs_metric in obs_metrics:
             if obs_metric > lower_80 and obs_metric < upper_80:
                 range_80 += 1
-
-        range_50_perc = range_50/len(obs_metrics)
-        range_80_perc = range_80/len(obs_metrics)
+        range_50_perc = range_50/obs_len
+        range_80_perc = range_80/obs_len
         range_50_perc_ls.append(range_50_perc)
         range_80_perc_ls.append(range_80_perc)
+
         # Assign letter grade and exceedance level based on 50th/80th scores
         # Scores: Excellent: 80th 0.8-0.55 and 50th 0.5-0.4: 
         # Good: 80th 0.4-0.8 and 50th 0.25-0.5
@@ -92,8 +101,6 @@ for index, site in enumerate(ffc_obs):
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
-    output = output.drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2','Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5',
-    'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
     output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
     output = output.drop(['score', 'grade'], axis=1)
     site['alt_scores'] = output

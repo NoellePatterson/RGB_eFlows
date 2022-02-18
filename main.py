@@ -14,6 +14,6 @@ data_folder = 'RGB_unimp_ffc_outputs'
 drh_dicts_nat, rh_dicts_nat = import_drh_data(data_folder)
 summarize_ffc_metrics(data_folder, 'naturalized')
 # for plotting function, input dataset dicts and flow condition (observed/naturalized)
-# plot = plot_rh(rh_dicts_obs, 'observed') # naturalized or observed
+# plot = plot_rh(rh_dicts_obs, 'naturalized') # naturalized or observed
 # plot = overlap_plots(rh_dicts_nat, rh_dicts_obs)
 

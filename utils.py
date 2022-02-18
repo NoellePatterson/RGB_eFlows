@@ -31,9 +31,15 @@ def import_ffc_data(data_folder):
         supp_dict = {}
         supp_dict['gage_id'] = supp_file.split('/')[2][0:4] 
         supp_dict['supp_metrics'] = pd.read_csv(supp_file, sep=',', index_col=0)
+        # to reduce POR:
+        if data_folder == 'RGB_observed_ffc_outputs':
+            supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,19:]
         supp_dicts.append(supp_dict)
     for metric_file in main_metric_files:
         main_metrics = pd.read_csv(metric_file, sep=',', index_col=0)
+        # to reduce POR:
+        if data_folder == 'RGB_observed_ffc_outputs':
+            main_metrics = main_metrics.iloc[:,19:]
         main_dict = {}
         main_dict['gage_id'] = metric_file.split('/')[2][0:4] 
         # align supplemental metric file with main metric file, and add info to the main gage dict
