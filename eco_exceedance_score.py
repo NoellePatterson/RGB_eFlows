@@ -38,6 +38,7 @@ for index, site in enumerate(ffc_obs):
     metrics = site['ffc_metrics'].index
     range_50_perc_ls = []
     range_80_perc_ls = []
+    final_scores = []
     percent_change = []
     naturalized_avg = []
     observed_avg = []
@@ -60,16 +61,18 @@ for index, site in enumerate(ffc_obs):
         # Double-check with Sam: are observed values to test agains naturalized supposed to be All the values (like I've done)?
         # Or should I be testing observed interquartile with the naturzlied interquartile?
         for obs_metric in obs_metrics:
-            if obs_metric > lower_50 and obs_metric < upper_50:
+            if obs_metric >= lower_50 and obs_metric <= upper_50:
                 range_50 += 1
         for obs_metric in obs_metrics:
-            if obs_metric > lower_80 and obs_metric < upper_80:
+            if obs_metric >= lower_80 and obs_metric <= upper_80:
                 range_80 += 1
         range_50_perc = range_50/obs_len
         range_80_perc = range_80/obs_len
         range_50_perc_ls.append(range_50_perc)
         range_80_perc_ls.append(range_80_perc)
-
+        final_score = np.nanmean([range_50_perc, range_80_perc])
+        final_scores.append(final_score)
+        
         # Assign letter grade and exceedance level based on 50th/80th scores
         # Scores: Excellent: 80th 0.8-0.55 and 50th 0.5-0.4: 
         # Good: 80th 0.4-0.8 and 50th 0.25-0.5
@@ -78,31 +81,52 @@ for index, site in enumerate(ffc_obs):
         # Special concern - if none of other conditions have been met (should be 80th 0.4-0.8 OR 50th 0.25-0.5)
         score = None
         grade = None
-        if range_80_perc >= 0.55 and range_50_perc >= 0.4:
-            score = 'Excellent'
-            grade = 'A'
-        elif range_80_perc >= 0.4 and range_50_perc >= 0.25:
-            score = 'Good'
-            grade = 'B'
-        elif range_80_perc <= 0.15 and range_50_perc <= 0.15:
-            score = 'Severe danger'
-            grade = 'F'
-        elif range_80_perc <= 0.4 and range_50_perc <= 0.25:
-            score = 'Extremely altered'
-            grade = 'D'
-        else:
-            score = 'Special concern'
-            grade = 'C'
-        score_ls.append(score)
-        grade_ls.append(grade)
-
-    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, score_ls, grade_ls), 
-    columns = ['Interquartile', 'Interdecile', 'score', 'grade'])
+        scoring_strategy = 'one-value'
+        # scoring_strategy = 'two-value'
+        if scoring_strategy == 'two-value':
+            if range_80_perc >= 0.55 and range_50_perc >= 0.4:
+                score = 'Excellent'
+                grade = 'A'
+            elif range_80_perc >= 0.4 and range_50_perc >= 0.25:
+                score = 'Good'
+                grade = 'B'
+            elif range_80_perc <= 0.15 and range_50_perc <= 0.15:
+                score = 'Severe danger'
+                grade = 'F'
+            elif range_80_perc <= 0.4 and range_50_perc <= 0.25:
+                score = 'Extremely altered'
+                grade = 'D'
+            else:
+                score = 'Special concern'
+                grade = 'C'
+            score_ls.append(score)
+            grade_ls.append(grade)
+        elif scoring_strategy == 'one-value':
+            if final_score >= 0.5: 
+                score = 'Excellent'
+                grade = 'A'
+            elif 0.4 <= final_score <= 0.5:
+                score = 'Good'
+                grade = 'B'
+            elif 0.3 <= final_score <= 0.4:
+                score = 'Special concern'
+                grade = 'C'
+            elif 0.2 <= final_score <= 0.3:
+                score = 'Extremely altered'
+                grade = 'D'
+            elif final_score <= 0.2:
+                score = 'Severe danger'
+                grade = 'F'
+            score_ls.append(score)
+            grade_ls.append(grade)
+    
+    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, final_scores, score_ls, grade_ls), 
+    columns = ['Interquartile', 'Interdecile', 'Final score', 'designation', 'grade'])
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
-    output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
-    output = output.drop(['score', 'grade'], axis=1)
+    # output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
+    output = output.drop(['designation', 'grade'], axis=1)
     site['alt_scores'] = output
     site_dfs.append(output)
 
@@ -139,6 +163,7 @@ upper_co = pd.concat(upper_co).groupby(level=0, sort=False).mean()
 upper_nm = pd.concat(upper_nm).groupby(level=0, sort=False).mean()
 middle = pd.concat(middle).groupby(level=0, sort=False).mean()
 lower = pd.concat(lower).groupby(level=0, sort=False).mean()
+import pdb; pdb.set_trace()
 
 def rename_cols(df):
     df = df.rename(columns={0: 'Interquartile', 1: 'Interdecile'})
