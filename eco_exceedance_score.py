@@ -71,8 +71,14 @@ for index, site in enumerate(ffc_obs):
         range_50_perc_ls.append(range_50_perc)
         range_80_perc_ls.append(range_80_perc)
         final_score = np.nanmean([range_50_perc, range_80_perc])
-        final_scores.append(final_score)
         
+        # convert final score into a 0-100% score
+        report_score = None 
+        if final_score > 0.5:
+            report_score = 100
+        else: 
+            report_score = final_score * 200
+        final_scores.append(report_score)
         # Assign letter grade and exceedance level based on 50th/80th scores
         # Scores: Excellent: 80th 0.8-0.55 and 50th 0.5-0.4: 
         # Good: 80th 0.4-0.8 and 50th 0.25-0.5
@@ -102,20 +108,23 @@ for index, site in enumerate(ffc_obs):
             score_ls.append(score)
             grade_ls.append(grade)
         elif scoring_strategy == 'one-value':
-            if final_score >= 0.5: 
+            if report_score >= 100: 
                 score = 'Excellent'
                 grade = 'A'
-            elif 0.4 <= final_score <= 0.5:
+            elif 80 <= report_score <= 100:
                 score = 'Good'
                 grade = 'B'
-            elif 0.3 <= final_score <= 0.4:
-                score = 'Special concern'
-                grade = 'C'
-            elif 0.2 <= final_score <= 0.3:
-                score = 'Extremely altered'
+            elif 60 <= report_score <= 80:
+                score = 'Moderately good'
+                grade = 'C+'
+            elif 40 <= report_score <= 60:
+                score = 'Moderate'
+                grade = 'C-'
+            elif 20 <= report_score <= 40:
+                score = 'Poor'
                 grade = 'D'
-            elif final_score <= 0.2:
-                score = 'Severe danger'
+            elif report_score <= 20:
+                score = 'Very poor'
                 grade = 'F'
             score_ls.append(score)
             grade_ls.append(grade)
@@ -125,7 +134,7 @@ for index, site in enumerate(ffc_obs):
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
-    # output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
+    output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
     output = output.drop(['designation', 'grade'], axis=1)
     site['alt_scores'] = output
     site_dfs.append(output)
@@ -163,7 +172,7 @@ upper_co = pd.concat(upper_co).groupby(level=0, sort=False).mean()
 upper_nm = pd.concat(upper_nm).groupby(level=0, sort=False).mean()
 middle = pd.concat(middle).groupby(level=0, sort=False).mean()
 lower = pd.concat(lower).groupby(level=0, sort=False).mean()
-import pdb; pdb.set_trace()
+# import pdb; pdb.set_trace()
 
 def rename_cols(df):
     df = df.rename(columns={0: 'Interquartile', 1: 'Interdecile'})
@@ -176,11 +185,11 @@ lower = rename_cols(lower)
 all_sites = pd.concat(site_component_dfs).groupby(level=0, sort=False).mean() # arithmetic average all sites
 all_sites = rename_cols(all_sites)
 
-all_sites.to_csv('data_outputs/Eco-exceedance_regionalized_score_Sam.csv')
-upper_co.to_csv('data_outputs/Eco-exceedance_upper_co.csv')
-upper_nm.to_csv('data_outputs/Eco-exceedance_upper_nm.csv')
-middle.to_csv('data_outputs/Eco-exceedance_middle.csv')
-lower.to_csv('data_outputs/Eco-exceedance_lower.csv')
+all_sites.to_csv('data_outputs/Alteration_scores/Eco-exceedance_regionalized_score_Sam.csv')
+upper_co.to_csv('data_outputs/Alteration_scores/Eco-exceedance_upper_co.csv')
+upper_nm.to_csv('data_outputs/Alteration_scores/Eco-exceedance_upper_nm.csv')
+middle.to_csv('data_outputs/Alteration_scores/Eco-exceedance_middle.csv')
+lower.to_csv('data_outputs/Alteration_scores/Eco-exceedance_lower.csv')
 import pdb; pdb.set_trace()
 # outputs: 1. Scores sorted by each ff component (and metric), qualitative score and letter grade, overall score
 # 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one  
