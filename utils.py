@@ -21,7 +21,7 @@ def import_drh_data(data_folder):
         rh_dicts.append(rh_dict)
     return drh_dicts, rh_dicts
 
-def import_ffc_data(data_folder):
+def import_ffc_data(data_folder, date_start=0, date_end=46):
     folder = 'data_inputs/{}'.format(data_folder)
     main_metric_files = glob.glob(folder + '/*flow_result.csv')
     supp_metric_files = glob.glob(folder + '/*supplementary_metrics.csv')
@@ -31,15 +31,15 @@ def import_ffc_data(data_folder):
         supp_dict = {}
         supp_dict['gage_id'] = supp_file.split('/')[2][0:4] 
         supp_dict['supp_metrics'] = pd.read_csv(supp_file, sep=',', index_col=0)
-        # to reduce POR:
+        # to reduce POR: [all] 0:46, [1995-2021] 19:46, [1990-2015] 14:40, [1985-2010] 9:35, [1980-2005] 4:30, [1975-2000] 0:25
         if data_folder == 'RGB_observed_ffc_outputs':
-            supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,19:]
+            supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,date_start:date_end]
         supp_dicts.append(supp_dict)
     for metric_file in main_metric_files:
         main_metrics = pd.read_csv(metric_file, sep=',', index_col=0)
         # to reduce POR:
         if data_folder == 'RGB_observed_ffc_outputs':
-            main_metrics = main_metrics.iloc[:,19:]
+            main_metrics = main_metrics.iloc[:,date_start:date_end]
         main_dict = {}
         main_dict['gage_id'] = metric_file.split('/')[2][0:4] 
         # align supplemental metric file with main metric file, and add info to the main gage dict

@@ -7,11 +7,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set()
 
-# determine eco exceedance score for RGB observed flow data. Try w all ff metrics
+# Provide time period for observed metrics
+# ('all', 0, 46), ('1995-2021', 19, 46), ('1990-2015', 14, 40), ('1985-2010', 9, 35), ('1980-2005', 4, 30), ('1975-2000', 0,25)
+por = ('all', 0, 46)
 
 # assemble data: ff metrics for all sites, observed and naturalized
 data_folder = 'RGB_observed_ffc_outputs'
-ffc_obs = import_ffc_data(data_folder)
+ffc_obs = import_ffc_data(data_folder, por[1], por[2])
 
 data_folder = 'RGB_unimp_ffc_outputs'
 ffc_nat = import_ffc_data(data_folder)
@@ -23,8 +25,8 @@ for index, site in enumerate(ffc_obs):
     'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
     'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
     for site_name in names_dict.keys():
-            if site_name == site['gage_id']:
-                print_name = names_dict[site_name]
+        if site_name == site['gage_id']:
+            print_name = names_dict[site_name]
 
     ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2',
@@ -42,7 +44,7 @@ for index, site in enumerate(ffc_obs):
     percent_change = []
     naturalized_avg = []
     observed_avg = []
-    score_ls = []
+    designation_ls = []
     grade_ls = []
     for metric in metrics:
         # determine bounds of 50th and 80th percentile
@@ -66,18 +68,17 @@ for index, site in enumerate(ffc_obs):
         for obs_metric in obs_metrics:
             if obs_metric >= lower_80 and obs_metric <= upper_80:
                 range_80 += 1
-        range_50_perc = range_50/obs_len
-        range_80_perc = range_80/obs_len
+        range_50_perc = (range_50/obs_len)*(1/.5) # multiplier accounts for limited range of naturalized vals in comparison
+        range_80_perc = (range_80/obs_len)*(1/.8)
+        if range_50_perc > 1: # set 1 as highest value possible
+            range_50_perc = 1
+        if range_80_perc > 1:
+            range_80_perc = 1
         range_50_perc_ls.append(range_50_perc)
         range_80_perc_ls.append(range_80_perc)
         final_score = np.nanmean([range_50_perc, range_80_perc])
-        
         # convert final score into a 0-100% score
-        report_score = None 
-        if final_score > 0.5:
-            report_score = 100
-        else: 
-            report_score = final_score * 200
+        report_score = final_score * 100
         final_scores.append(report_score)
         # Assign letter grade and exceedance level based on 50th/80th scores
         # Scores: Excellent: 80th 0.8-0.55 and 50th 0.5-0.4: 
@@ -87,55 +88,61 @@ for index, site in enumerate(ffc_obs):
         # Special concern - if none of other conditions have been met (should be 80th 0.4-0.8 OR 50th 0.25-0.5)
         score = None
         grade = None
-        scoring_strategy = 'one-value'
-        # scoring_strategy = 'two-value'
-        if scoring_strategy == 'two-value':
-            if range_80_perc >= 0.55 and range_50_perc >= 0.4:
-                score = 'Excellent'
-                grade = 'A'
-            elif range_80_perc >= 0.4 and range_50_perc >= 0.25:
-                score = 'Good'
-                grade = 'B'
-            elif range_80_perc <= 0.15 and range_50_perc <= 0.15:
-                score = 'Severe danger'
-                grade = 'F'
-            elif range_80_perc <= 0.4 and range_50_perc <= 0.25:
-                score = 'Extremely altered'
-                grade = 'D'
-            else:
-                score = 'Special concern'
-                grade = 'C'
-            score_ls.append(score)
-            grade_ls.append(grade)
-        elif scoring_strategy == 'one-value':
+        def get_scores(report_score):
             if report_score >= 100: 
-                score = 'Excellent'
-                grade = 'A'
-            elif 80 <= report_score <= 100:
+                score = 'Very Good'
+                grade = 'A+'
+            elif 95 <= report_score < 100:
                 score = 'Good'
+                grade = 'A+'
+            elif 85 <= report_score < 95:
+                score = 'Good'
+                grade = 'A'
+            elif 80 <= report_score < 85:
+                score = 'Good'
+                grade = 'A-'
+            elif 75 <= report_score < 80:
+                score = 'Moderately Good'
+                grade = 'B+'
+            elif 65 <= report_score < 75:
+                score = 'Moderately Good'
                 grade = 'B'
-            elif 60 <= report_score <= 80:
+            elif 60 <= report_score < 65:
                 score = 'Moderately good'
-                grade = 'C+'
-            elif 40 <= report_score <= 60:
+                grade = 'B-'
+            elif 55 <= report_score < 60:
                 score = 'Moderate'
+                grade = 'C+'
+            elif 45 <= report_score < 55:
+                score = 'Moderate'
+                grade = 'C'
+            elif 40 <= report_score < 45:
+                score = 'Moderately Poor'
                 grade = 'C-'
-            elif 20 <= report_score <= 40:
+            elif 35 <= report_score < 40:
+                score = 'Poor'
+                grade = 'D+'
+            elif 25 <= report_score < 35:
                 score = 'Poor'
                 grade = 'D'
-            elif report_score <= 20:
+            elif 20 <= report_score < 25:
+                score = 'Poor'
+                grade = 'D-'
+            elif report_score < 20:
                 score = 'Very poor'
                 grade = 'F'
-            score_ls.append(score)
-            grade_ls.append(grade)
+            return score, grade
+        score, grade = get_scores(report_score)
+        designation_ls.append(score)
+        grade_ls.append(grade)
     
-    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, final_scores, score_ls, grade_ls), 
+    output = pd.DataFrame(zip(range_50_perc_ls, range_80_perc_ls, final_scores, designation_ls, grade_ls), 
     columns = ['Interquartile', 'Interdecile', 'Final score', 'designation', 'grade'])
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
-    output.to_csv('data_outputs/Alteration_scores/{}.csv'.format(print_name))
-    output = output.drop(['designation', 'grade'], axis=1)
+    output.to_csv('data_outputs/Alteration_scores_{}/{}.csv'.format(por[0], print_name))
+    output = output.drop(['designation', 'grade', 'Interquartile', 'Interdecile'], axis=1)
     site['alt_scores'] = output
     site_dfs.append(output)
 
@@ -172,10 +179,9 @@ upper_co = pd.concat(upper_co).groupby(level=0, sort=False).mean()
 upper_nm = pd.concat(upper_nm).groupby(level=0, sort=False).mean()
 middle = pd.concat(middle).groupby(level=0, sort=False).mean()
 lower = pd.concat(lower).groupby(level=0, sort=False).mean()
-# import pdb; pdb.set_trace()
 
 def rename_cols(df):
-    df = df.rename(columns={0: 'Interquartile', 1: 'Interdecile'})
+    df = df.rename(columns={0: 'Alteration score'})
     return df
 upper_co = rename_cols(upper_co)
 upper_nm = rename_cols(upper_nm)
@@ -185,25 +191,34 @@ lower = rename_cols(lower)
 all_sites = pd.concat(site_component_dfs).groupby(level=0, sort=False).mean() # arithmetic average all sites
 all_sites = rename_cols(all_sites)
 
-all_sites.to_csv('data_outputs/Alteration_scores/Eco-exceedance_regionalized_score_Sam.csv')
-upper_co.to_csv('data_outputs/Alteration_scores/Eco-exceedance_upper_co.csv')
-upper_nm.to_csv('data_outputs/Alteration_scores/Eco-exceedance_upper_nm.csv')
-middle.to_csv('data_outputs/Alteration_scores/Eco-exceedance_middle.csv')
-lower.to_csv('data_outputs/Alteration_scores/Eco-exceedance_lower.csv')
+sites = [all_sites, upper_co, upper_nm, middle, lower]
+for site in sites:
+    grade_ls = []
+    designation_ls = []
+    for val in site['Alteration score']:
+        designation, grade = get_scores(val)
+        designation_ls.append(designation)
+        grade_ls.append(grade)
+    site['Grade'] = grade_ls
+    site['Designation'] = designation_ls
+
+all_sites.to_csv('data_outputs/Alteration_scores_{}/Report_card_regionalized_score.csv'.format(por[0]))
+upper_co.to_csv('data_outputs/Alteration_scores_{}/Report_card_upper_co.csv'.format(por[0]))
+upper_nm.to_csv('data_outputs/Alteration_scores_{}/Report_card_upper_nm.csv'.format(por[0]))
+middle.to_csv('data_outputs/Alteration_scores_{}/Report_card_middle.csv'.format(por[0]))
+lower.to_csv('data_outputs/Alteration_scores_{}/Report_card_lower.csv'.format(por[0]))
 import pdb; pdb.set_trace()
 # outputs: 1. Scores sorted by each ff component (and metric), qualitative score and letter grade, overall score
 # 2. boxplot of values for each site's 4 components categories. Try to make output file with 4 plots in one  
 
 for index, site in enumerate(ffc_obs):
-    # import pdb; pdb.set_trace()
     nat_data = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     obs_data = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
-
     fall_metrics = {'name': 'Fall', 'all_metrics':['FA_Mag', 'FA_Tim', 'FA_Dur'], 'mag_metrics':['FA_Mag'], 'nonmag_metrics':['FA_Tim', 'FA_Dur']}
     wet_metrics = {'name': 'Wet', 'all_metrics':['Wet_BFL_Mag_10', 'Wet_BFL_Mag_50', 'Wet_Tim', 'Wet_BFL_Dur'], 'mag_metrics':['Wet_BFL_Mag_10', 'Wet_BFL_Mag_50'], 'nonmag_metrics':['Wet_Tim', 'Wet_BFL_Dur']}
     spring_metrics = {'name': 'Spring', 'all_metrics':['SP_Mag', 'SP_Tim', 'SP_Dur', 'SP_ROC'], 'mag_metrics':['SP_Mag'], 'nonmag_metrics':['SP_Tim', 'SP_Dur', 'SP_ROC']}
     dry_metrics = {'name': 'Dry', 'all_metrics':['DS_Mag_50', 'DS_Mag_90', 'DS_Tim', 'DS_Dur_WS'], 'mag_metrics':['DS_Mag_50', 'DS_Mag_90'], 'nonmag_metrics':['DS_Tim', 'DS_Dur_WS']}
-    annual_metrics = {'name': 'Annual', 'all_metrics':['Avg', 'CV', 'DS_No_Flow'], 'mag_metrics':['Avg'], 'nonmag_metrics':['CV', 'DS_No_Flow']}
+    annual_metrics = {'name': 'Annual', 'all_metrics':['Avg', 'CV'], 'mag_metrics':['Avg'], 'nonmag_metrics':['CV']}
     component_dicts = [fall_metrics, wet_metrics, spring_metrics, dry_metrics, annual_metrics]
     # group each component's data into long format, w col for obs/nat condition 
     # plot magnitude separately bc values are so different
@@ -212,8 +227,8 @@ for index, site in enumerate(ffc_obs):
     'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
     'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
     for site_name in names_dict.keys():
-            if site_name == site['gage_id']:
-                print_name = names_dict[site_name]
+        if site_name == site['gage_id']:
+            print_name = names_dict[site_name]
 
     for component in component_dicts:
         fig, axes = plt.subplots(1, 2, figsize=(10,6))
@@ -229,10 +244,11 @@ for index, site in enumerate(ffc_obs):
         boxplot_df1 = pd.melt(boxplot_df1, id_vars=['condition'], value_vars=component['nonmag_metrics'], var_name='metric')
         boxplot_df2 = boxplot_df.drop(component['nonmag_metrics'], axis=1)
         boxplot_df2 = pd.melt(boxplot_df2, id_vars=['condition'], value_vars=component['mag_metrics'], var_name='metric')
-        sns.boxplot(ax=axes[0], data = boxplot_df1, x = 'metric', y='value', hue = 'condition')
-        sns.boxplot(ax=axes[1], data = boxplot_df2, x = 'metric', y='value', hue = 'condition')
+        sns.boxplot(ax=axes[0], data = boxplot_df1, x = 'metric', y='value', hue = 'condition', whis=[10, 90])
+        sns.boxplot(ax=axes[1], data = boxplot_df2, x = 'metric', y='value', hue = 'condition', whis=[10, 90])
         plt.legend([],[], frameon=False) # remove second instance of legend
-        plt.suptitle('{} {} Metrics'.format(print_name, component['name']))
+        # plt.suptitle('{} {} Metrics'.format(print_name, component['name']))
+        plt.suptitle('{} Metrics'.format(component['name']))
         plt.savefig('data_outputs/Eco_exceedance_boxplots/{}/boxplot_{}.jpeg'.format(print_name, component['name']), dpi=600, bbox_inches='tight')
         # import pdb; pdb.set_trace()
 
