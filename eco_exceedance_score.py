@@ -29,12 +29,8 @@ for index, site in enumerate(ffc_obs):
             print_name = names_dict[site_name]
 
     ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
-    ffc_nat[index]['ffc_metrics'] = ffc_nat[index]['ffc_metrics'].drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2',
-    'Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5', 'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
 
     ffc_obs[index]['ffc_metrics'] = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
-    ffc_obs[index]['ffc_metrics'] = ffc_obs[index]['ffc_metrics'].drop(['Peak_2','Peak_5','Peak_10','Peak_Dur_2',
-    'Peak_Dur_5','Peak_Dur_10','Peak_Fre_2','Peak_Fre_5', 'Peak_Fre_10','Std','DS_No_Flow'], axis=0)
 
     site_id = site['gage_id']
     metrics = site['ffc_metrics'].index
@@ -57,7 +53,7 @@ for index, site in enumerate(ffc_obs):
         range_80 = 0
         obs_metrics = ffc_obs[index]['ffc_metrics'].loc[metric]
         obs_len = len(obs_metrics.dropna())
-        if obs_len == 0: # some peak metrics are all NA, easiest fix is to pass over them
+        if obs_len == 0: # If a metric's values are all NA, easiest fix is to pass over them
             continue
         # determine % values within range in each category
         # Double-check with Sam: are observed values to test agains naturalized supposed to be All the values (like I've done)?
@@ -156,13 +152,12 @@ middle = []
 lower = []
 for site in ffc_obs:
     # Create outputs by component
-    fall = site['alt_scores'].iloc[0:3,:].mean()
-    wet = site['alt_scores'].iloc[3:7,:].mean()
-    spring = site['alt_scores'].iloc[7:11,:].mean()
-    dry = site['alt_scores'].iloc[11:15,:].mean()
-    annual = site['alt_scores'].iloc[15:17,:].mean()
-    components = pd.concat([fall, wet, spring, dry, annual], axis=1)
-    components.columns = ['Fall pulse', 'Wet season', 'Spring recession', 'Dry season', 'Annual']
+    spring = site['alt_scores'].iloc[np.r_[0:4,8], :].mean()
+    monsoon = site['alt_scores'].iloc[4:8,:].mean()
+    dry = site['alt_scores'].iloc[9:13,:].mean()
+    annual = site['alt_scores'].iloc[13:16,:].mean()
+    components = pd.concat([spring, monsoon,  dry, annual], axis=1)
+    components.columns = ['Spring Flood Pulse', 'Monsoon', 'Dry season', 'Annual']
     components = components.transpose()
     site_component_dfs.append(components)
     if site['gage_id'] == 'RG6_':
@@ -213,12 +208,11 @@ import pdb; pdb.set_trace()
 for index, site in enumerate(ffc_obs):
     nat_data = ffc_nat[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
     obs_data = ffc_obs[index]['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
-    fall_metrics = {'name': 'Fall', 'all_metrics':['FA_Mag', 'FA_Tim', 'FA_Dur'], 'mag_metrics':['FA_Mag'], 'nonmag_metrics':['FA_Tim', 'FA_Dur']}
-    wet_metrics = {'name': 'Wet', 'all_metrics':['Wet_BFL_Mag_10', 'Wet_BFL_Mag_50', 'Wet_Tim', 'Wet_BFL_Dur'], 'mag_metrics':['Wet_BFL_Mag_10', 'Wet_BFL_Mag_50'], 'nonmag_metrics':['Wet_Tim', 'Wet_BFL_Dur']}
-    spring_metrics = {'name': 'Spring', 'all_metrics':['SP_Mag', 'SP_Tim', 'SP_Dur', 'SP_ROC'], 'mag_metrics':['SP_Mag'], 'nonmag_metrics':['SP_Tim', 'SP_Dur', 'SP_ROC']}
+    spring_metrics = {'name': 'Spring', 'all_metrics':['SP_Mag_50', 'SP_Tim', 'SP_Dur', 'SP_Mag_peak', 'SP_ROC'], 'mag_metrics':['SP_Mag_50', 'SP_Mag_peak'], 'nonmag_metrics':['SP_Tim', 'SP_Dur', 'SP_ROC']}
+    monsoon_metrics = {'name': 'Monsoon', 'all_metrics':['Mons_mag_50', 'Mons_mag_90', 'Mons_Tim', 'Mons_Dur'], 'mag_metrics':['Mons_mag_50', 'Mons_mag_90'], 'nonmag_metrics':['Mons_Tim', 'Mons_Dur']}
     dry_metrics = {'name': 'Dry', 'all_metrics':['DS_Mag_50', 'DS_Mag_90', 'DS_Tim', 'DS_Dur_WS'], 'mag_metrics':['DS_Mag_50', 'DS_Mag_90'], 'nonmag_metrics':['DS_Tim', 'DS_Dur_WS']}
     annual_metrics = {'name': 'Annual', 'all_metrics':['Avg', 'CV'], 'mag_metrics':['Avg'], 'nonmag_metrics':['CV']}
-    component_dicts = [fall_metrics, wet_metrics, spring_metrics, dry_metrics, annual_metrics]
+    component_dicts = [spring_metrics, monsoon_metrics, dry_metrics, annual_metrics]
     # group each component's data into long format, w col for obs/nat condition 
     # plot magnitude separately bc values are so different
 
