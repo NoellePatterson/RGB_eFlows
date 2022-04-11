@@ -18,10 +18,12 @@ def import_drh_data(data_folder):
         rh_dict = {} 
         rh_dict['name'] = rh_file.split('/')[2][:-23] 
         rh_dict['data'] = pd.read_csv(rh_file, sep=',', index_col=None)
+        # use subset of rh data 1990-2020 for plotting
+        rh_dict['data'] = rh_dict['data'].iloc[:, 14:]
         rh_dicts.append(rh_dict)
     return drh_dicts, rh_dicts
 
-def import_ffc_data(data_folder, date_start=0, date_end=46):
+def import_ffc_data(data_folder, date_start=14, date_end=46):
     folder = 'data_inputs/{}'.format(data_folder)
     main_metric_files = glob.glob(folder + '/*flow_result.csv')
     supp_metric_files = glob.glob(folder + '/*supplementary_metrics.csv')
@@ -31,10 +33,11 @@ def import_ffc_data(data_folder, date_start=0, date_end=46):
         supp_dict = {}
         supp_dict['gage_id'] = supp_file.split('/')[2][0:4] 
         supp_dict['supp_metrics'] = pd.read_csv(supp_file, sep=',', index_col=0)
-        # to reduce POR: [all] 0:46, [1995-2021] 19:46, [1990-2015] 14:40, [1985-2010] 9:35, [1980-2005] 4:30, [1975-2000] 0:25
+        # to reduce POR: [1990-2020] 14:46, [all] 0:46, [1995-2020] 19:46, [1990-2015] 14:40, [1985-2010] 9:35, [1980-2005] 4:30, [1975-2000] 0:25
         if data_folder == 'RGB_observed_ffc_outputs':
             supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,date_start:date_end]
         supp_dicts.append(supp_dict)
+        # import pdb; pdb.set_trace()
     for metric_file in main_metric_files:
         main_metrics = pd.read_csv(metric_file, sep=',', index_col=0)
         # to reduce POR:
@@ -54,7 +57,6 @@ def summarize_ffc_metrics(data_folder, flow_condition):
     # Summarize metrics across years in [median and percentiles]
     for ffc_dict in ffc_dicts:
         ffc_dict['ffc_metrics'] = ffc_dict['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
-        ffc_dict['ffc_metrics'] = ffc_dict['ffc_metrics'].drop(['Std', 'DS_No_Flow'])
         sum_med = ffc_dict['ffc_metrics'].quantile(.5, axis=1)
         sum_10 = ffc_dict['ffc_metrics'].quantile(.10, axis=1)
         sum_25 = ffc_dict['ffc_metrics'].quantile(.25, axis=1)
@@ -68,6 +70,7 @@ def summarize_ffc_metrics(data_folder, flow_condition):
         for site_name in names_dict.keys():
             if site_name == ffc_dict['gage_id']:
                 print_name = names_dict[site_name]
+        # import pdb; pdb.set_trace()
         summary_output.to_csv('data_outputs/Metric_summaries_{}/{}.csv'.format(flow_condition, print_name))
 
 def compile_data():
@@ -81,6 +84,7 @@ def compile_data():
     for index, flow_col in enumerate(flow_cols):
         name = flow_cols.iloc[:,index].name
         output = pd.DataFrame(zip(new_date_col, flow_cols.iloc[:,index]), columns = ['date', 'flow'])
+        # output.to_csv('data_inputs/RGB_observed_ffc_inputs_1990-2020/'+name+'.csv', index=None)
         output.to_csv('data_inputs/RGB_observed_ffc_inputs/'+name+'.csv', index=None)
 
 def convert_15_min():

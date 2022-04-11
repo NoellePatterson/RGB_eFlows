@@ -8,14 +8,14 @@ import seaborn as sns
 sns.set()
 
 # Provide time period for observed metrics
-# ('all', 0, 46), ('1995-2021', 19, 46), ('1990-2015', 14, 40), ('1985-2010', 9, 35), ('1980-2005', 4, 30), ('1975-2000', 0,25)
-por = ('all', 0, 46)
+# ('1990-2020', 14, 46), ('all', 0, 46), ('1995-2020', 19, 46), ('1990-2015', 14, 40), ('1985-2010', 9, 35), ('1980-2005', 4, 30), ('1975-2000', 0,25)
+por = ('1990-2020', 14, 46)
 
 # assemble data: ff metrics for all sites, observed and naturalized
 data_folder = 'RGB_observed_ffc_outputs'
 ffc_obs = import_ffc_data(data_folder, por[1], por[2])
 
-data_folder = 'RGB_unimp_ffc_outputs'
+data_folder = 'RGB_naturalized_ffc_outputs'
 ffc_nat = import_ffc_data(data_folder)
 
 site_dfs = [] # append each final df for a site to this list, take average over sites later
@@ -86,6 +86,7 @@ for index, site in enumerate(ffc_obs):
         # Extremely altered: 80th 0.15-0.4 and 50th 0.15-0.25
         # Severe danger: 80th 0-0.15 and 50th 0-0.15
         # Special concern - if none of other conditions have been met (should be 80th 0.4-0.8 OR 50th 0.25-0.5)
+
         score = None
         grade = None
         def get_scores(report_score):
@@ -145,7 +146,6 @@ for index, site in enumerate(ffc_obs):
     output = output.drop(['designation', 'grade', 'Interquartile', 'Interdecile'], axis=1)
     site['alt_scores'] = output
     site_dfs.append(output)
-
 # Aggregation: geom average of all metrics per component. Arithmetic avg across all sites' components. 
 # And finally: arithmetic mean of regionalized components for one final number. 
 site_component_dfs = []
@@ -156,11 +156,11 @@ middle = []
 lower = []
 for site in ffc_obs:
     # Create outputs by component
-    fall = pd.Series(stats.gmean(site['alt_scores'].iloc[0:3,:]))
-    wet = pd.Series(stats.gmean(site['alt_scores'].iloc[3:7,:]))
-    spring = pd.Series(stats.gmean(site['alt_scores'].iloc[7:11,:]))
-    dry = pd.Series(stats.gmean(site['alt_scores'].iloc[11:15,:]))
-    annual = pd.Series(stats.gmean(site['alt_scores'].iloc[15:17,:]))
+    fall = site['alt_scores'].iloc[0:3,:].mean()
+    wet = site['alt_scores'].iloc[3:7,:].mean()
+    spring = site['alt_scores'].iloc[7:11,:].mean()
+    dry = site['alt_scores'].iloc[11:15,:].mean()
+    annual = site['alt_scores'].iloc[15:17,:].mean()
     components = pd.concat([fall, wet, spring, dry, annual], axis=1)
     components.columns = ['Fall pulse', 'Wet season', 'Spring recession', 'Dry season', 'Annual']
     components = components.transpose()
@@ -179,9 +179,8 @@ upper_co = pd.concat(upper_co).groupby(level=0, sort=False).mean()
 upper_nm = pd.concat(upper_nm).groupby(level=0, sort=False).mean()
 middle = pd.concat(middle).groupby(level=0, sort=False).mean()
 lower = pd.concat(lower).groupby(level=0, sort=False).mean()
-
 def rename_cols(df):
-    df = df.rename(columns={0: 'Alteration score'})
+    df = df.rename({'Final score': 'Alteration score'}, axis='columns')
     return df
 upper_co = rename_cols(upper_co)
 upper_nm = rename_cols(upper_nm)

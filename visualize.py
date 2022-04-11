@@ -25,7 +25,6 @@ def plot_rh(rgb_rh, flow_condition):
     percentiles = [25, 50, 75]
     percentile_keys = ['twenty_five', 'fifty', 'seventy_five']
     rh = {}
-    import pdb; pdb.set_trace()
     for site in rgb_rh:
         rh = create_plotlines(site, rh, percentiles, percentile_keys)
         plt.rc('ytick', labelsize=9) 
