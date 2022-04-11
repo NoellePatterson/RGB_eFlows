@@ -1,6 +1,7 @@
 from os import rename
 import numpy as np
 import pandas as pd
+import os
 from utils import import_ffc_data
 from scipy import stats
 import matplotlib.pyplot as plt
@@ -242,6 +243,8 @@ for index, site in enumerate(ffc_obs):
         plt.legend([],[], frameon=False) # remove second instance of legend
         # plt.suptitle('{} {} Metrics'.format(print_name, component['name']))
         plt.suptitle('{} Metrics'.format(component['name']))
+        if os.path.exists('data_outputs/Eco_exceedance_boxplots/{}'.format(print_name)) == False:
+            os.makedirs('data_outputs/Eco_exceedance_boxplots/{}'.format(print_name))
         plt.savefig('data_outputs/Eco_exceedance_boxplots/{}/boxplot_{}.jpeg'.format(print_name, component['name']), dpi=600, bbox_inches='tight')
         # import pdb; pdb.set_trace()
 
