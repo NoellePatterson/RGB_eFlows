@@ -139,6 +139,8 @@ for index, site in enumerate(ffc_obs):
     # to print outputs individually for each site
     output['metrics'] = metrics
     output = output.set_index(['metrics'])
+    if os.path.exists('data_outputs/Alteration_scores_{}'.format(por[0])) == False:
+        os.makedirs('data_outputs/Alteration_scores_{}'.format(por[0]))
     output.to_csv('data_outputs/Alteration_scores_{}/{}.csv'.format(por[0], print_name))
     output = output.drop(['designation', 'grade', 'Interquartile', 'Interdecile'], axis=1)
     site['alt_scores'] = output
