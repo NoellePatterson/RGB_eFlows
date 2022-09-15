@@ -3,6 +3,7 @@ import glob
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import pdb
 
 def import_drh_data(data_folder):
     drh_files = glob.glob('data_inputs/{}/*drh.csv'.format(data_folder)) 
@@ -31,20 +32,20 @@ def import_ffc_data(data_folder, date_start=14, date_end=46):
     supp_dicts = []
     for supp_file in supp_metric_files:
         supp_dict = {}
-        supp_dict['gage_id'] = supp_file.split('/')[2][0:4] 
+        supp_dict['gage_id'] = supp_file.split('/')[2][0:10] 
         supp_dict['supp_metrics'] = pd.read_csv(supp_file, sep=',', index_col=0)
         # to reduce POR: [1990-2020] 14:46, [all] 0:46, [1995-2020] 19:46, [1990-2015] 14:40, [1985-2010] 9:35, [1980-2005] 4:30, [1975-2000] 0:25
-        if data_folder == 'RGB_observed_ffc_outputs':
-            supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,date_start:date_end]
+        # if data_folder == 'RGB_observed_ffc_outputs':
+        #     supp_dict['supp_metrics'] = supp_dict['supp_metrics'].iloc[:,date_start:date_end]
         supp_dicts.append(supp_dict)
         # import pdb; pdb.set_trace()
     for metric_file in main_metric_files:
         main_metrics = pd.read_csv(metric_file, sep=',', index_col=0)
         # to reduce POR:
-        if data_folder == 'RGB_observed_ffc_outputs':
-            main_metrics = main_metrics.iloc[:,date_start:date_end]
+        # if data_folder == 'RGB_observed_ffc_outputs':
+        #     main_metrics = main_metrics.iloc[:,date_start:date_end]
         main_dict = {}
-        main_dict['gage_id'] = metric_file.split('/')[2][0:4] 
+        main_dict['gage_id'] = metric_file.split('/')[2][0:10] 
         # align supplemental metric file with main metric file, and add info to the main gage dict
         for supp_dict in supp_dicts:
             if supp_dict['gage_id'] == main_dict['gage_id']:
@@ -56,6 +57,7 @@ def summarize_ffc_metrics(data_folder, flow_condition):
     ffc_dicts = import_ffc_data(data_folder)  
     # Summarize metrics across years in [median and percentiles]
     for ffc_dict in ffc_dicts:
+        pdb.set_trace()
         ffc_dict['ffc_metrics'] = ffc_dict['ffc_metrics'].apply(pd.to_numeric, errors='coerce')
         sum_med = ffc_dict['ffc_metrics'].quantile(.5, axis=1)
         sum_10 = ffc_dict['ffc_metrics'].quantile(.10, axis=1)
@@ -64,14 +66,10 @@ def summarize_ffc_metrics(data_folder, flow_condition):
         sum_90 = ffc_dict['ffc_metrics'].quantile(.90, axis=1)
         headers = ['tenth', 'twenty-fifth', 'fiftieth', 'seventy-fifth', 'nintieth']
         summary_output = pd.DataFrame(zip(sum_10, sum_25, sum_med, sum_75, sum_90), columns=headers, index=sum_med.index)
-        names_dict = {'RG6_':'RG6_NR_LOBATOS', 'RG7_':'RG7_NR_CERRO', 'RG8_':'RG8_NR_TAOS_BRIDGE', 'RG9_':'RG9_EMBUDO', 'RG10':'RG10_OTOWI_BRIDGE',
-        'RG11':'RG11_BLW_COCHITI_DAM', 'RG12':'RG12_SAN_FELIPE', 'RG14':'RG14_ALBUQUERQUE', 'RG15':'RG15_AT_SAN_MARCIAL', 'RG16':'RG16_NR_SAN_ACACIA',
-        'RG18':'RG18_BLW_ELEPHANT_BUTTE', 'RG19':'RG19_BLW_CABALLO', 'RG20':'RG20_EL_PASO', 'RG21':'RG21_FORT_QUITMAN', 'RG22':'RG22_ABV_RIO_CONCHOS'}
-        for site_name in names_dict.keys():
-            if site_name == ffc_dict['gage_id']:
-                print_name = names_dict[site_name]
+        print_name = ffc_dict['gage_id']
         # import pdb; pdb.set_trace()
         summary_output.to_csv('data_outputs/Metric_summaries_{}/{}.csv'.format(flow_condition, print_name))
+
 
 def compile_data():
     data_cols = pd.read_csv('data_inputs/RGB_observed_daily_discharge.csv')

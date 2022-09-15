@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 def create_plotlines(rh_site, plotlines_dict, percentiles, percentile_keys):
+    # import pdb; pdb.set_trace()
     for index, percentile in enumerate(percentile_keys):
         plotlines_dict[percentile] = []
     # within each run, pull out flow percentiles from each row
@@ -22,6 +23,7 @@ def plot_stuff(plotlines, color, plot_label):
     plt.fill_between(x, plotlines['fifty'], plotlines['seventy_five'], color=color, alpha = 0.3)
 
 def plot_rh(rgb_rh, flow_condition):
+    rgb_rh = [{'data':pd.read_csv('Merced_matrix.csv')}]
     percentiles = [25, 50, 75]
     percentile_keys = ['twenty_five', 'fifty', 'seventy_five']
     rh = {}
@@ -38,11 +40,15 @@ def plot_rh(rgb_rh, flow_condition):
         plt.tick_params(axis='y', which='major', pad=1)
         month_ticks = [0,32,60,91,121,152,182,213,244,274,305,335]
         month_labels = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+        month_labels = [ 'O', 'N', 'D', 'J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S']
         plt.xticks(month_ticks, month_labels)
         plt.ylabel('Flow (cfs)', fontsize=10)
-        name = site['name']
+        # name = site['name']
+        name = 'Merced River, California'
         plt.title('{}'.format(name), size=10)
-        plt.savefig('data_outputs/RGB_{}_rh/{}.png'.format(flow_condition, site['name']), dpi=800)  
+        # plt.savefig('data_outputs/RGB_{}_rh/{}.png'.format(flow_condition, site['name']), dpi=800)  
+        plt.savefig('data_outputs/Merced.png')
+        print('done')
         plt.clf()
     
 def overlap_plots(rh_nat, rh_obs):
